@@ -21,24 +21,35 @@ namespace CameraThing
 
             Application.Idle += (o, s) =>
             {
-                Mat image = i.Image();
+                //Switch between buf1 and buf2 when passing by reference
+                //use output on the final operation
+                Mat buf1 = i.Image();
+                Mat buf2 = new Mat();
                 Mat output = new Mat();
-                Mat hsv = new Mat();
 
-                if (null == image)
+                if (null == buf1)
                     return;
 
-                CvInvoke.CvtColor(image, hsv, Emgu.CV.CvEnum.ColorConversion.Bgr2Hsv);
+                //HSV Filter
+                CvInvoke.CvtColor(buf1, buf2, Emgu.CV.CvEnum.ColorConversion.Bgr2Hsv);
                 MCvScalar low = new MCvScalar(81, 103, 186);
                 MCvScalar high = new MCvScalar(96, 255, 255);
-                CvInvoke.InRange(hsv, new ScalarArray(low), new ScalarArray(high), output);
-                //cvtColor(input, hsv, COLOR_BGR2HSV);
-                //inRange(hsv, low, high, output);
-                //outputSocket.setValue(output);
+                CvInvoke.InRange(buf2, new ScalarArray(low), new ScalarArray(high), output);
+
+                //Contours
+
+
+                //Filter contours
+
+
+                //Convex hull
+
+                
+                //report to NetworkTables
+
+
 
                 viewer.Image = output;
-
-                //Thread.Sleep(100);
             };
 
             viewer.ShowDialog();
