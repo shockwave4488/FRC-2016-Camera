@@ -32,8 +32,8 @@ namespace CameraThing
 
                 //HSV Filter
                 CvInvoke.CvtColor(buf1, buf2, Emgu.CV.CvEnum.ColorConversion.Bgr2Hsv);
-                MCvScalar low = new MCvScalar(81, 103, 186);
-                MCvScalar high = new MCvScalar(96, 255, 255);
+                MCvScalar low = new MCvScalar(63, 44, 193);
+                MCvScalar high = new MCvScalar(97, 255, 255);
                 CvInvoke.InRange(buf2, new ScalarArray(low), new ScalarArray(high), output);
 
                 //Contours
