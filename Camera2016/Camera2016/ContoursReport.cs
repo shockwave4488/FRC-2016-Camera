@@ -57,6 +57,24 @@ namespace Camera2016
             return m_boundingBoxes;
         }
 
+        public Rectangle GetLargest()
+        {
+            int largestIndex = 0;
+            double currentLargest = 0;
+            //double[] areas = new double[Contours.Size];
+            for (int i = 0; i < Contours.Size; i++)
+            {
+                double area = CvInvoke.ContourArea(Contours[i]);
+                if (area > currentLargest)
+                {
+                    currentLargest = area;
+                    largestIndex = i;
+                }
+                //areas[i] = CvInvoke.ContourArea(Contours[i]);
+            }
+            return ComputeBoundingBoxes()[largestIndex];
+        }
+
         public double[] GetArea()
         {
             double[] areas = new double[Contours.Size];

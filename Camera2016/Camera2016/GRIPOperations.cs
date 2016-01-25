@@ -88,5 +88,49 @@ namespace Camera2016
             return new ContoursReport(outputContours, input.Rows, input.Cols);
         }
 
+        public static ContoursReport CustomFilter(ContoursReport input)
+        {
+            var inputContours = input.Contours;
+            var outputContours = new VectorOfVectorOfPoint(inputContours.Size);
+
+            VectorOfPoint hull = new VectorOfPoint();
+
+            for (int i = 0; i < inputContours.Size; i++)
+            {
+                VectorOfPoint contour = inputContours[i];
+                if (contour.Size != 4 || !CvInvoke.IsContourConvex(contour)) 
+                    //We are not a 4 sided polygon
+                    continue;
+                int numNearlyHorizontal = 0;
+                int numNearlyVertical = 0;
+
+                for (int j = 0; j < 4; j++)
+                {
+                    double dy = contour[j].Y - contour[(j + 1) % 4].Y;
+                    double dx = contour[j].X - contour[(j + 1) % 4].X;
+
+                    double slope = double.MaxValue;
+                    if (dx != 0) slope = Math.Abs(dy / dx);
+                    if (slope < kNearlyHorizontalSlope)
+                        ++numNearlyHorizontal;
+                    else if (slope > kNearlyVerticalSlope)
+                        ++numNearlyVertical;
+
+                    if (numNearlyHorizontal >= 1 && numNearlyVertical == 2)
+                    {
+                        //Draw Polygon
+
+                        outputContours.Push(contour);
+                    }
+                }
+            }
+
+            return new ContoursReport(outputContours, input.Rows, input.Cols);
+        }
+
+
+        //More things to do
+        //Check for Rectangle
+        //Check 
     }
 }
