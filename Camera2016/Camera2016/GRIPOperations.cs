@@ -13,6 +13,9 @@ namespace Camera2016
 {
     static class GRIPOperations
     {
+        private static double kNearlyHorizontalSlope = 0;
+        private static double kNearlyVerticalSlope = 0;
+
         public static Mat HSVThreshold(Mat input)
         {
             MCvScalar low = new MCvScalar(63, 44, 193);
@@ -28,7 +31,13 @@ namespace Camera2016
 
         public static ContoursReport FindContours(Mat input)
         {
-            Mat tmp = input.Clone();
+            Image<Gray, byte> tmp = input.ToImage<Gray, byte>();
+
+            //input.CopyTo(tmp);
+
+            //CvInvoke.ConvertMaps(input, null, tmp, null, DepthType.Cv8U, 1);
+
+            ///input.ConvertTo(tmp, DepthType.Cv8U);
 
             VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
             CvInvoke.FindContours(tmp, contours, null, RetrType.List, ChainApproxMethod.ChainApproxTc89Kcos);

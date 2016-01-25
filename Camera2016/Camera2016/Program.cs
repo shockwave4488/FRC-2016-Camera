@@ -19,12 +19,19 @@ namespace Camera2016
             Application.Idle += (o, s) =>
             {
                 Mat image = imageGrabber.Image();
+                if (image == null) return;
+                
+                //image = image.convertTo(image32S, CvType.CV_32SC1)
                 var filered = GRIPOperations.HSVThreshold(image);
                 var contourss = GRIPOperations.FindContours(image);
-                var filteredContourss = GRIPOperations.FilterContours(contourss);
-                var convexHulled = GRIPOperations.ConvexHull(filteredContourss);
+                //var filteredContourss = GRIPOperations.FilterContours(contourss);
+                var convexHulled = GRIPOperations.ConvexHull(contourss);
 
+                CvInvoke.DrawContours(filered, convexHulled.Contours, -1, new MCvScalar(0, 255, 255));
 
+                viewer.Image = filered;
+
+                /*
 
                 Mat HsvIn = new Mat();
                 Mat HsvOut = new Mat();
@@ -68,9 +75,9 @@ namespace Camera2016
                 
                 //report to NetworkTables
 
+                */
 
-
-                viewer.Image = output;
+                //viewer.Image = output;
             };
 
             viewer.ShowDialog();
