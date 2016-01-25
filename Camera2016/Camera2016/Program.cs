@@ -19,6 +19,13 @@ namespace Camera2016
             Application.Idle += (o, s) =>
             {
                 Mat image = imageGrabber.Image();
+                var filered = GRIPOperations.HSVThreshold(image);
+                var contourss = GRIPOperations.FindContours(image);
+                var filteredContourss = GRIPOperations.FilterContours(contourss);
+                var convexHulled = GRIPOperations.ConvexHull(filteredContourss);
+
+
+
                 Mat HsvIn = new Mat();
                 Mat HsvOut = new Mat();
                 Mat output = new Mat();
@@ -46,6 +53,8 @@ namespace Camera2016
                     //Rectangle r = CvInvoke.BoundingRectangle(contour); <- use if we need min/max width/height
 
                     if (CvInvoke.ContourArea(contour) < 100) continue;
+
+                    CvInvoke.ConvexHull(contour, new Mat());
 
                     filteredContours.Push(contour);
                 }
