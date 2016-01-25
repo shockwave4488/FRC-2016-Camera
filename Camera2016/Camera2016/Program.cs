@@ -21,15 +21,24 @@ namespace Camera2016
                 Mat image = imageGrabber.Image();
                 if (image == null) return;
                 
-                //image = image.convertTo(image32S, CvType.CV_32SC1)
+                //image = image.ConvertTo(image32S, CvType.CV_32SC1)
                 var filered = GRIPOperations.HSVThreshold(image);
-                var contourss = GRIPOperations.FindContours(image);
-                //var filteredContourss = GRIPOperations.FilterContours(contourss);
+                
+                var contourss = GRIPOperations.FindContours(filered);
+                var filteredContourss = GRIPOperations.FilterContours(contourss);
                 var convexHulled = GRIPOperations.ConvexHull(contourss);
 
                 CvInvoke.DrawContours(filered, convexHulled.Contours, -1, new MCvScalar(0, 255, 255));
 
+                contourss.Dispose();
+                filteredContourss.Dispose();
+                convexHulled.Dispose();
+
+                image.Dispose();
+                var oldImage = viewer.Image;
+
                 viewer.Image = filered;
+                oldImage?.Dispose();
 
                 /*
 

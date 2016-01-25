@@ -13,8 +13,13 @@ namespace Camera2016
         /// </summary>
         private Capture m_grabber;
 
-        private Mat m_buf1, m_buf2;
-        private bool m_switch;
+
+        private Mat m_image1 = new Mat();
+        private Mat m_image2 = new Mat();
+        private bool m_switch = true;
+        private readonly object m_lockObject = new object();
+
+
         private Thread m_captureThread;
 
         /// <summary>
@@ -24,7 +29,7 @@ namespace Camera2016
         {
             //m_grabber = new Capture("http://10.44.88.11/axis-cgi/mjpg/video.cgi?resolution=320x240&.mjpg");
             m_grabber = new Capture();
-            m_switch = false;
+            //m_switch = false;
             m_captureThread = new Thread(run);
             m_captureThread.Start();
         }
@@ -33,13 +38,21 @@ namespace Camera2016
         {
             while (true)
             {
-                Mat image = m_grabber.QueryFrame();
-                if (m_switch)
-                    m_buf1 = image;
-                else
-                    m_buf2 = image;
-
-                m_switch = !m_switch;
+                m_grabber.Grab();
+                Mat image;
+                lock (m_lockObject)
+                {
+                    if (m_switch)
+                    {
+                        image = m_image1;
+                    }
+                    else
+                    {
+                        image = m_image2;
+                    }
+                    m_switch = !m_switch;
+                }
+                m_grabber.Retrieve(image);
             }
         }
 
@@ -49,7 +62,24 @@ namespace Camera2016
         /// <returns></returns>
         public Mat Image()
         {
-            return !m_switch ? m_buf1 : m_buf2;
+            lock (m_lockObject)
+            {
+                if (m_switch)
+                {
+                    //If its using1, m_image2 is the current image being grabbed.
+                    //Use image 1
+                    if (m_image1.IsEmpty) return null;
+                    return m_image1.Clone();
+                }
+                else
+                {
+                    //Otherwise its capturing to image1
+                    //return image 2
+                    if (m_image2.IsEmpty) return null;
+                    return m_image2.Clone();
+                }
+
+            }
         }
     }
 }

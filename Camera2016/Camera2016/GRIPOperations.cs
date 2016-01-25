@@ -26,6 +26,7 @@ namespace Camera2016
 
             CvInvoke.CvtColor(input, hsv, ColorConversion.Bgr2Hsv);
             CvInvoke.InRange(hsv, new ScalarArray(low), new ScalarArray(high), output);
+            hsv.Dispose();
             return output;
         }
 
@@ -33,14 +34,10 @@ namespace Camera2016
         {
             Image<Gray, byte> tmp = input.ToImage<Gray, byte>();
 
-            //input.CopyTo(tmp);
-
-            //CvInvoke.ConvertMaps(input, null, tmp, null, DepthType.Cv8U, 1);
-
-            ///input.ConvertTo(tmp, DepthType.Cv8U);
-
             VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
             CvInvoke.FindContours(tmp, contours, null, RetrType.List, ChainApproxMethod.ChainApproxTc89Kcos);
+
+            tmp.Dispose();
             return new ContoursReport(contours, input.Rows, input.Cols);
         }
 
@@ -91,8 +88,12 @@ namespace Camera2016
 
                 if (solidity < minSolidity || solidity > maxSolidity) continue;
 
+                
+
                 outputContours.Push(contour);
             }
+
+            hull.Dispose();
 
             return new ContoursReport(outputContours, input.Rows, input.Cols);
         }
@@ -102,7 +103,7 @@ namespace Camera2016
             var inputContours = input.Contours;
             var outputContours = new VectorOfVectorOfPoint(inputContours.Size);
 
-            VectorOfPoint hull = new VectorOfPoint();
+            //VectorOfPoint hull = new VectorOfPoint();
 
             for (int i = 0; i < inputContours.Size; i++)
             {

@@ -13,7 +13,7 @@ using System.Drawing;
 
 namespace Camera2016
 {
-    class ContoursReport
+    class ContoursReport : IDisposable
     {
 
         public int Rows
@@ -38,6 +38,11 @@ namespace Camera2016
             Contours = contours;
             Rows = rows;
             Cols = cols;
+        }
+
+        public void Dispose()
+        {
+            Contours?.Dispose();
         }
 
         
