@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using Emgu.CV;
 
-namespace CameraThing
+namespace Camera2016
 {
     /// <summary>
     /// Double-buffered class for grabbing images from the axis camera
@@ -22,7 +22,8 @@ namespace CameraThing
         /// </summary>
         public ImageGrabber()
         {
-            m_grabber = new Capture("http://10.44.88.11/axis-cgi/mjpg/video.cgi?resolution=320x240&.mjpg");
+            //m_grabber = new Capture("http://10.44.88.11/axis-cgi/mjpg/video.cgi?resolution=320x240&.mjpg");
+            m_grabber = new Capture();
             m_switch = false;
             m_captureThread = new Thread(run);
             m_captureThread.Start();

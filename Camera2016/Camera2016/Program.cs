@@ -1,20 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Mime;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
+﻿using System.Windows.Forms;
 using Emgu.CV;
-using Emgu.CV.UI;
-using Emgu.CV.Structure;
-using System.Windows.Forms;
-using Emgu.CV.Util;
 using Emgu.CV.CvEnum;
+using Emgu.CV.Structure;
+using Emgu.CV.UI;
+using Emgu.CV.Util;
 using System.Drawing;
 
-
-namespace CameraThing
+namespace Camera2016
 {
     class Program
     {
@@ -22,16 +14,15 @@ namespace CameraThing
         {
             ImageViewer viewer = new ImageViewer();
 
-            ImageGrabber i = new ImageGrabber();
+            ImageGrabber imageGrabber = new ImageGrabber();
 
             Application.Idle += (o, s) =>
             {
-                //Switch between buf1 and buf2 when passing by reference
-                //use output on the final operation
-                Mat image = i.Image();
+                Mat image = imageGrabber.Image();
                 Mat HsvIn = new Mat();
                 Mat HsvOut = new Mat();
                 Mat output = new Mat();
+                //output.Create(image.Height, image.Width, DepthType.Cv8U, 1); This is giving me problems for some reason
 
                 if (null == image)
                     return;
@@ -45,12 +36,26 @@ namespace CameraThing
                 //Contours
                 VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
                 CvInvoke.FindContours(HsvOut, contours, null, RetrType.List, ChainApproxMethod.ChainApproxTc89Kcos);
+                CvInvoke.DrawContours(output, contours, -1, new MCvScalar(0, 0, 0));
                 
                 //Filter contours
+                VectorOfVectorOfPoint filteredContours = new VectorOfVectorOfPoint();
+                for (int i = 0; i < contours.Size; i++)
+                {
+                    VectorOfPoint contour = contours[i];
+                    //Rectangle r = CvInvoke.BoundingRectangle(contour); <- use if we need min/max width/height
 
+                    if (CvInvoke.ContourArea(contour) < 100) continue;
+
+                    filteredContours.Push(contour);
+                }
 
                 //Convex hull
-
+                VectorOfVectorOfPoint convexHulls = new VectorOfVectorOfPoint(filteredContours.Size);
+                for (int i = 0; i < filteredContours.Size; i++)
+                {
+                    CvInvoke.ConvexHull(filteredContours[i], convexHulls[i]);
+                }
                 
                 //report to NetworkTables
 
