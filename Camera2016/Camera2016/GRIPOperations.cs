@@ -18,8 +18,8 @@ namespace Camera2016
 
         public static Mat HSVThreshold(Mat input)
         {
-            MCvScalar low = new MCvScalar(63, 44, 193);
-            MCvScalar high = new MCvScalar(97, 255, 255);
+            MCvScalar low = new MCvScalar(45, 44, 193);
+            MCvScalar high = new MCvScalar(150, 255, 255);
 
             Mat hsv = new Mat();
             Mat output = new Mat();
@@ -32,7 +32,8 @@ namespace Camera2016
 
         public static ContoursReport FindContours(Mat input)
         {
-            Image<Gray, byte> tmp = input.ToImage<Gray, byte>();
+            Mat tmp = new Mat();
+            input.ConvertTo(tmp, DepthType.Cv8U);
 
             VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
             CvInvoke.FindContours(tmp, contours, null, RetrType.List, ChainApproxMethod.ChainApproxTc89Kcos);
