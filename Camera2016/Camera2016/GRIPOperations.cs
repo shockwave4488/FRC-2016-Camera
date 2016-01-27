@@ -13,8 +13,8 @@ namespace Camera2016
 {
     static class GRIPOperations
     {
-        private static double kNearlyHorizontalSlope = 0;
-        private static double kNearlyVerticalSlope = 0;
+        private static double kNearlyHorizontalSlope =  Math.Tan(0.349066);
+        private static double kNearlyVerticalSlope = Math.Tan(1.22173);
 
         public static Mat HSVThreshold(Mat input)
         {
@@ -137,6 +137,48 @@ namespace Camera2016
             }
 
             return new ContoursReport(outputContours, input.Rows, input.Cols);
+        }
+
+        static double HorizontalFOVDeg = 47.0;
+        static double VerticalFOVDeg = 240.0 / 320.0 * HorizontalFOVDeg;
+
+        static double ShooterOffsetDegrees = 0;
+
+        static double TopTargetHeight = 100; //In Inches
+
+
+        public static void GetDataToSend(Rectangle valid)
+        {
+            double x = valid.X + (valid.Width / 2);
+            x = (2 * (x / 320.0)) - 1;
+            double y = valid.Y + (valid.Height / 2);
+            y = (2 * (y / 240.0)) - 1;
+
+            double oldHeading = 0;
+            double currentAngle = 0;
+
+            double azimuthX = BoundAngle0to360Degrees(x * HorizontalFOVDeg / 2.0 + oldHeading + ShooterOffsetDegrees);
+            double azimuthY = BoundAngle0to360Degrees(y * VerticalFOVDeg / 2.0 + currentAngle);
+
+            double radiusShooter = 1; //Meter
+            double currentCameraHeight = 0//Some sin function I dont wanna do right now.
+
+            double range = (TopTargetHeight - currentCameraHeight) / Math.Tan((y * VerticalFOVDeg / 2.0 + currentAngle) * Math.PI / 180.0);
+        }
+
+
+        private static double BoundAngle0to360Degrees(double angle)
+        {
+            // Naive algorithm
+            while (angle >= 360.0)
+            {
+                angle -= 360.0;
+            }
+            while (angle < 0.0)
+            {
+                angle += 360.0;
+            }
+            return angle;
         }
 
 
