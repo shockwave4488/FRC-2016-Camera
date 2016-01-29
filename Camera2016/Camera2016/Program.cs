@@ -16,6 +16,8 @@ namespace Camera2016
 
             ImageGrabber imageGrabber = new ImageGrabber();
 
+            ImageViewer HSVView = new ImageViewer();
+
             Application.Idle += (o, s) =>
             {
                 Mat image = imageGrabber.Image();
@@ -25,19 +27,25 @@ namespace Camera2016
                 var filered = GRIPOperations.HSVThreshold(image);
                 
                 var contourss = GRIPOperations.FindContours(filered);
-                var filteredContourss = GRIPOperations.FilterContours(contourss);
+                
                 var convexHulled = GRIPOperations.ConvexHull(contourss);
 
-                CvInvoke.DrawContours(filered, convexHulled.Contours, -1, new MCvScalar(0, 255, 255));
+                var custom = GRIPOperations.CustomFilter(convexHulled);
+
+                CvInvoke.DrawContours(image, custom.Contours, -1, new MCvScalar(0, 255, 255), 3);
 
                 contourss.Dispose();
-                filteredContourss.Dispose();
+                //filteredContourss.Dispose();
                 convexHulled.Dispose();
 
-                image.Dispose();
+                CvInvoke.Imshow("Hulled", image);
+
+                //image.Dispose();
                 var oldImage = viewer.Image;
 
-                viewer.Image = filered;
+                viewer.Image = image;
+
+                HSVView.Image = filered;
                 oldImage?.Dispose();
 
                 /*
@@ -89,7 +97,8 @@ namespace Camera2016
                 //viewer.Image = output;
             };
 
-            viewer.ShowDialog();
+            //viewer.ShowDialog();
+            HSVView.ShowDialog();
         }
     }
 }

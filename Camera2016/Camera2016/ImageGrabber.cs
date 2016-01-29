@@ -27,8 +27,8 @@ namespace Camera2016
         /// </summary>
         public ImageGrabber()
         {
-            //m_grabber = new Capture("http://10.44.88.11/axis-cgi/mjpg/video.cgi?resolution=320x240&.mjpg");
-            m_grabber = new Capture();
+            m_grabber = new Capture("http://10.44.88.11/axis-cgi/mjpg/video.cgi?resolution=320x240&.mjpg");
+            //m_grabber = new Capture("Image360.jpg");
             //m_switch = false;
             m_captureThread = new Thread(run);
             m_captureThread.Start();

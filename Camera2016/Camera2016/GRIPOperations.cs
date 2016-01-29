@@ -18,8 +18,8 @@ namespace Camera2016
 
         public static Mat HSVThreshold(Mat input)
         {
-            MCvScalar low = new MCvScalar(45, 44, 193);
-            MCvScalar high = new MCvScalar(150, 255, 255);
+            MCvScalar low = new MCvScalar(47, 37, 37);
+            MCvScalar high = new MCvScalar(105, 255, 255);
 
             Mat hsv = new Mat();
             Mat output = new Mat();
@@ -108,7 +108,15 @@ namespace Camera2016
 
             for (int i = 0; i < inputContours.Size; i++)
             {
+                
+
                 VectorOfPoint contour = inputContours[i];
+
+                VectorOfPoint outputs = new VectorOfPoint(inputContours.Size);
+                CvInvoke.ApproxPolyDP(contour, outputs, 10, true);
+
+                contour = outputs;
+
                 if (contour.Size != 4 || !CvInvoke.IsContourConvex(contour)) 
                     //We are not a 4 sided polygon
                     continue;
@@ -161,7 +169,7 @@ namespace Camera2016
             double azimuthY = BoundAngle0to360Degrees(y * VerticalFOVDeg / 2.0 + currentAngle);
 
             double radiusShooter = 1; //Meter
-            double currentCameraHeight = 0//Some sin function I dont wanna do right now.
+            double currentCameraHeight = 0;//Some sin function I dont wanna do right now.
 
             double range = (TopTargetHeight - currentCameraHeight) / Math.Tan((y * VerticalFOVDeg / 2.0 + currentAngle) * Math.PI / 180.0);
         }
