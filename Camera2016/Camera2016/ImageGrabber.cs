@@ -14,7 +14,7 @@ namespace Camera2016
         private Capture m_grabber;
 
         private readonly object m_mutex = new object();
-        private Mat m_buf1 = new Mat(), m_buf2 = new Mat();
+        private AngledMat m_buf1 = new AngledMat(), m_buf2 = new AngledMat();
         private bool m_switch;
         private Thread m_captureThread;
 
@@ -23,7 +23,7 @@ namespace Camera2016
         /// </summary>
         public ImageGrabber()
         {
-            m_grabber = new Capture("http://10.44.88.11/axis-cgi/mjpg/video.cgi?resolution=320x240&.mjpg");
+            m_grabber = new Capture("http://10.44.88.11/axis-cgi/mjpg/video.cgi?resolution=640x480&.mjpg");
             //m_grabber = new Capture();
             m_switch = false;
             m_captureThread = new Thread(run);
@@ -35,7 +35,7 @@ namespace Camera2016
             while (true)
             {
                 m_grabber.Grab();
-                Mat image;
+                AngledMat image;
                 lock (m_mutex)
                 {
                     if (m_switch)
@@ -45,7 +45,8 @@ namespace Camera2016
 
                     m_switch = !m_switch;
                 }
-                m_grabber.Retrieve(image);
+                image.GetValues();
+                m_grabber.Retrieve(image.Image);
             }
         }
 
@@ -53,7 +54,7 @@ namespace Camera2016
         /// Get the image not currently being written to
         /// </summary>
         /// <returns></returns>
-        public Mat Image()
+        public AngledMat Image()
         {
             lock (m_mutex)
             {
