@@ -32,18 +32,28 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Kangaroo|AnyCPU'">
+    <OutputPath>bin\Kangaroo\</OutputPath>
+    <DefineConstants>TRACE;KANGAROO</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Emgu.CV">
-      <HintPath>.\Emgu.CV.dll</HintPath>
+      <HintPath>..\..\..\..\..\Documents\GitHub\FRC-2016-Camera\Camera2016\Camera2016\Emgu.CV.dll</HintPath>
     </Reference>
     <Reference Include="Emgu.CV.UI">
-      <HintPath>.\Emgu.CV.UI.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\..\Emgu\emgucv-windesktop 3.1.0.2282\bin\Emgu.CV.UI.dll</HintPath>
     </Reference>
     <Reference Include="Emgu.Util">
-      <HintPath>.\Emgu.Util.dll</HintPath>
+      <HintPath>..\..\..\..\..\Documents\GitHub\FRC-2016-Camera\Camera2016\Camera2016\Emgu.Util.dll</HintPath>
     </Reference>
-    <Reference Include="NetworkTables, Version=2016.0.0.148, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\FRC.NetworkTables.2016.0.0.148\lib\net45\NetworkTables.dll</HintPath>
+    <Reference Include="NetworkTables, Version=2016.0.1.16, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\FRC.NetworkTables.2016.0.1.16\lib\net45\NetworkTables.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -58,10 +68,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AngledMat.cs" />
+    <Compile Include="ImageBuffer.cs" />
     <Compile Include="ImageGrabber.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UpdatableArray.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

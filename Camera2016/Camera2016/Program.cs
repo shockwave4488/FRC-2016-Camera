@@ -6,63 +6,117 @@ using Emgu.CV.Structure;
 using Emgu.CV.UI;
 using Emgu.CV.Util;
 using System.Drawing;
-using System.Net;
-using System.Net.NetworkInformation;
 using NetworkTables;
 using NetworkTables.Tables;
+using System.Diagnostics;
+using System.Threading;
 
 namespace Camera2016
 {
     class Program
     {
+        static ITable visionTable;
+
         static void Main(string[] args)
         {
             NetworkTable.SetClientMode();
             NetworkTable.SetTeam(4488);
-            ITable table = NetworkTable.GetTable("SmartDashboard"); 
-            table.SetPersistent("HSVHIGH");
+            NetworkTable.SetIPAddress("10.44.88.2");
+#if KANGAROO
             NetworkTable.SetNetworkIdentity("Kangaroo");
+#else
+            NetworkTable.SetNetworkIdentity("CameraTracking");
+#endif
+            //Switch between Kangaroo and Desktop.
+            //On kangaroo, use different table and don't display image
+            visionTable = NetworkTable.GetTable("SmartDashboard");
 
-            AngledMat.NetworkTable = table;
-
-            var arr = table.GetNumberArray("HSVHIGH", new double[3]);
-
-            //ImageViewer viewer = new ImageViewer();
-            ImageGrabber imageGrabber = new ImageGrabber();
+            ImageGrabber imageGrabber = new ImageGrabber(visionTable);
 
             Mat HsvIn = new Mat(), HsvOut = new Mat(), output = new Mat(), Temp = new Mat();
             VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
-            VectorOfVectorOfPoint filteredContours = new VectorOfVectorOfPoint();
 
-            MCvScalar low = new MCvScalar(63, 44, 193);
-            MCvScalar high = new MCvScalar(97, 255, 255);
-            MCvScalar red = new MCvScalar(0, 0, 255);
+            //VectorOfVectorOfPoint filteredContours = new VectorOfVectorOfPoint();
 
-            while(true)
+            //MCvScalar low = new MCvScalar(63, 44, 193);
+            //MCvScalar high = new MCvScalar(97, 255, 255);
+
+            double[] defaultLow = new double[] { 63, 44, 193 };
+            double[] defaultHigh = new double[] { 97, 255, 255 };
+
+            VectorOfDouble arrayLow = new VectorOfDouble(3);
+            VectorOfDouble arrayHigh = new VectorOfDouble(3);
+
+            Point TopMidPoint = new Point((int)(ImageWidth / 2), 0);
+            Point BottomMidPoint = new Point((int)(ImageWidth / 2), (int)ImageHeight);
+
+            Point LeftMidPoint = new Point(0, (int)(ImageHeight / 2));
+            Point RightMidPoint = new Point((int)ImageWidth, (int)(ImageHeight / 2));
+
+            MCvScalar Red = new MCvScalar(0, 0, 255);
+            MCvScalar Green = new MCvScalar(0, 255, 0);
+            MCvScalar Blue = new MCvScalar(255, 0, 0);
+
+            Point TextPoint = new Point(0, 20);
+
+            Stopwatch sw = new Stopwatch();
+
+            int count = 0;
+
+            visionTable.PutNumberArray("HSVLow", defaultLow);
+            visionTable.PutNumberArray("HSVHigh", defaultHigh);
+
+            visionTable.PutNumber("ShooterOffsetDegreesX", ShooterOffsetDegreesX);
+            visionTable.PutNumber("ShooterOffsetDegreesY", ShooterOffsetDegreesY);
+
+            int imageCount = 0;
+
+            while (true)
             {
-                AngledMat image = imageGrabber.Image();
+                count++;
+                sw.Restart();
+                ImageBuffer image = imageGrabber.Image();
 
-                if (image.IsEmpty)
+#if KANGAROO
+                visionTable.PutNumber("KangarooHeartBeat", count);
+#endif
+
+                if (image == null || image.IsEmpty)
+                {
+                    image?.Dispose();
                     continue;
+                }
+                double[] ntLow = visionTable.GetNumberArray("HSVLow", defaultLow);
+                double[] ntHigh = visionTable.GetNumberArray("HSVHigh", defaultHigh);
+
+                if (ntLow.Length != 3)
+                    ntLow = defaultLow;
+                if (ntHigh.Length != 3)
+                    ntHigh = defaultHigh;
+
+                arrayLow.Clear();
+                arrayLow.Push(ntLow);
+                arrayHigh.Clear();
+                arrayHigh.Push(ntHigh);
 
                 //HSV Filter
                 CvInvoke.CvtColor(image.Image, HsvIn, Emgu.CV.CvEnum.ColorConversion.Bgr2Hsv);
-                CvInvoke.InRange(HsvIn, new ScalarArray(low), new ScalarArray(high), HsvOut);
-                
+                CvInvoke.InRange(HsvIn, arrayLow, arrayHigh, HsvOut);
+
                 HsvOut.ConvertTo(Temp, DepthType.Cv8U);
                 //Contours
                 CvInvoke.FindContours(Temp, contours, null, RetrType.List, ChainApproxMethod.ChainApproxTc89Kcos);
                 //CvInvoke.DrawContours(output, contours, -1, new MCvScalar(0, 0, 0));
 
-
                 VectorOfVectorOfPoint convexHulls = new VectorOfVectorOfPoint(contours.Size);
+
                 for (int i = 0; i < contours.Size; i++)
                 {
                     CvInvoke.ConvexHull(contours[i], convexHulls[i]);
                 }
 
-                Rectangle? largest = null;
-                double largestArea = 0;
+                Rectangle? largestRectangle = null;
+                double currentLargestArea = 0.0;
 
                 //Filter contours
                 for (int i = 0; i < convexHulls.Size; i++)
@@ -71,59 +125,81 @@ namespace Camera2016
                     VectorOfPoint polygon = new VectorOfPoint(convexHulls.Size);
                     CvInvoke.ApproxPolyDP(contour, polygon, 10, true);
 
+                    //VectorOfVectorOfPoint cont = new VectorOfVectorOfPoint(1);
+                    //cont.Push(polygon);
+
+                    //CvInvoke.DrawContours(image.Image, cont,-1, Green, 2);
+
                     if (polygon.Size != 4) continue;
                     if (!CvInvoke.IsContourConvex(polygon)) continue;
-                    
+
                     int numVertical = 0;
                     int numHorizontal = 0;
                     for (int j = 0; j < 4; j++)
                     {
-                        double dx = polygon[j].X - polygon[(j + 1)%4].X;
+                        double dx = polygon[j].X - polygon[(j + 1) % 4].X;
                         double dy = polygon[j].Y - polygon[(j + 1) % 4].Y;
                         double slope = double.MaxValue;
 
                         if (dx != 0) slope = Math.Abs(dy / dx);
 
                         double nearlyHorizontalSlope = Math.Tan(ToRadians(20));
-                        double nearlyVerticalSlope = Math.Tan(ToRadians(70));
+                        double rad = ToRadians(60);
+                        double nearlyVerticalSlope = Math.Tan(rad);
 
                         if (slope > nearlyVerticalSlope) numVertical++;
                         if (slope < nearlyHorizontalSlope) numHorizontal++;
                     }
 
-                    if (numVertical != 2 || numHorizontal < 1) continue;
+                    if (numHorizontal < 1) continue;
 
                     Rectangle bounds = CvInvoke.BoundingRectangle(polygon);
 
-                    double ratio = (double)bounds.Height/(double)bounds.Width;
-                    if (ratio > 1.0 || ratio < 0.3) continue;
+                    double ratio = (double)bounds.Height / bounds.Width;
+                    if (ratio > 1.0 || ratio < .3) continue;
 
                     double area = CvInvoke.ContourArea(contour);
 
                     if (area < 100) continue;
 
-                    if (largest == null || area > largestArea)
+                    CvInvoke.Rectangle(image.Image, bounds, Blue, 2);
+
+                    if (area > currentLargestArea)
                     {
-                        largest = bounds;
-                        largestArea = area;
+                        largestRectangle = bounds;
                     }
 
-                    filteredContours.Push(contour);
+                    //filteredContours.Push(contour);
+
 
                     polygon.Dispose();
                 }
+#if KANGAROO
+                visionTable.PutBoolean("TargetFound", largestRectangle != null);
+#endif
 
-                //report to NetworkTables
-
-                //Draw image to viewer
-                if (largest != null)
+                if (largestRectangle != null)
                 {
-                    CvInvoke.Rectangle(image.Image, largest.Value, red, 2);
+                    ProcessData(largestRectangle.Value, image);
+                    CvInvoke.Rectangle(image.Image, largestRectangle.Value, Red, 5);
                 }
 
-                CvInvoke.Imshow("Main", image.Image);
+                //ToDo, Draw Crosshairs
+                CvInvoke.Line(image.Image, TopMidPoint, BottomMidPoint, Blue, 3);
+                CvInvoke.Line(image.Image, LeftMidPoint, RightMidPoint, Blue, 3);
+
+                int fps = (int)(1.0 / sw.Elapsed.TotalSeconds);
+
+                CvInvoke.PutText(image.Image, fps.ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
+
+                imageCount++;
                 CvInvoke.Imshow("HSV", HsvOut);
+                CvInvoke.Imshow("MainWindow", image.Image);
                 image.Dispose();
+                
+
+
+                //report to NetworkTables
 
                 //Cleanup
 
@@ -132,14 +208,19 @@ namespace Camera2016
                     contours[i].Dispose();
                 }
                 contours.Clear();
-                
-                convexHulls.Dispose();
 
+                for (int i = 0; i < convexHulls.Size; i++)
+                {
+                    convexHulls[i].Dispose();
+                }
+                convexHulls.Dispose();
+                /*
                 for (int i = 0; i < filteredContours.Size; i++)
                 {
                     filteredContours[i].Dispose();
                 }
                 filteredContours.Clear();
+                */
 
                 CvInvoke.WaitKey(1);
             };
@@ -147,7 +228,84 @@ namespace Camera2016
 
         private static double ToRadians(double degrees)
         {
-            return degrees*Math.PI/180.0;
+            return degrees * Math.PI / 180.0;
         }
+
+        private static double ToDegrees(double radians)
+        {
+            return radians * 180.0 / Math.PI;
+        }
+#if KANGAROO
+        const double ImageWidth = 800.0;
+        const double ImageHeight = 600.0;
+#else
+        const double ImageWidth = 640.0;
+        const double ImageHeight = 480.0;
+#endif
+        const double HorizontalFOVDeg = 63;
+        const double VerticalFOVDeg = ImageHeight / ImageWidth * HorizontalFOVDeg;
+
+        static double ShooterOffsetDegreesX = 0;
+        private static double ShooterOffsetDegreesY = 0;
+
+        static double TopTargetHeight = 89; //In Inches
+
+        const double CameraShooterOffset = -6.0/12;
+
+
+
+
+        public static void ProcessData(Rectangle valid, ImageBuffer image)
+        {
+            //ShooterOffsetDegreesX = visionTable.GetNumber("ShooterOffsetDegreesX", 0.0);
+            //ShooterOffsetDegreesY = visionTable.GetNumber("ShooterOffsetDegreesY", 0.0);
+
+            double x = valid.X + (valid.Width / 2.0);
+            x = (2 * (x / ImageWidth)) - 1;
+            double y = valid.Y + (valid.Height / 2.0);
+            y = -((2 * (y / ImageHeight)) - 1);
+
+            double oldHeading = image.GyroAngle;
+            double currentAngle = image.ShooterAngle;
+
+            
+
+            double radiusShooter = 16.67;
+            double currentCameraHeight = Math.Sin(ToRadians(currentAngle + 6.67)) * radiusShooter + 10.0;//Some sin function I dont wanna do right now.
+            //Output in Meters
+            currentAngle = currentAngle - 25;//24.4
+
+            double range = (TopTargetHeight - currentCameraHeight) / Math.Tan((y * VerticalFOVDeg / 2.0 + currentAngle) * (Math.PI / 180.0));
+            //range *= 1.696;
+            range = range / 12.0;
+
+            ShooterOffsetDegreesX = Math.Asin(CameraShooterOffset/range)*(180.0/Math.PI);
+
+            double azimuthX = BoundAngle0to360Degrees(x * HorizontalFOVDeg / 2.0 + oldHeading + ShooterOffsetDegreesX);
+            double azimuthY = BoundAngle0to360Degrees(y * VerticalFOVDeg / 2.0 + (currentAngle+22) + ShooterOffsetDegreesY);
+#if KANGAROO
+            visionTable.PutNumber("Offset", ShooterOffsetDegreesX);
+            visionTable.PutNumber("AzimuthX", azimuthX);
+            visionTable.PutNumber("AzimuthY", azimuthY);
+            visionTable.PutNumber("Range", range);
+            NetworkTable.Flush();
+#endif
+        }
+
+
+        private static double BoundAngle0to360Degrees(double angle)
+        {
+            // Naive algorithm
+            while (angle >= 360.0)
+            {
+                angle -= 360.0;
+            }
+            while (angle < 0.0)
+            {
+                angle += 360.0;
+            }
+            return angle;
+        }
+
     }
 }

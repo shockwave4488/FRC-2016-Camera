@@ -1,5 +1,8 @@
-﻿using System.Threading;
+﻿using System;
+using System.Runtime.InteropServices;
+using System.Threading;
 using Emgu.CV;
+using NetworkTables.Tables;
 
 namespace Camera2016
 {
@@ -14,18 +17,34 @@ namespace Camera2016
         private Capture m_grabber;
 
         private readonly object m_mutex = new object();
-        private AngledMat m_buf1 = new AngledMat(), m_buf2 = new AngledMat();
+        private ImageBuffer m_buf1 = new ImageBuffer(), m_buf2 = new ImageBuffer();
         private bool m_switch;
         private Thread m_captureThread;
+        private ITable m_table;
+
+        private bool m_updated = false;
 
         /// <summary>
         /// Sets up camera and starts thread
         /// </summary>
-        public ImageGrabber()
+        public ImageGrabber(ITable table)
         {
-            m_grabber = new Capture("http://10.44.88.11/axis-cgi/mjpg/video.cgi?resolution=640x480&.mjpg");
+            do
+            {
+#if KANGAROO
+                m_grabber = new Capture("http://10.44.88.11/axis-cgi/mjpg/video.cgi?resolution=800x600&.mjpg");
+#else
+                m_grabber = new Capture("http://10.44.88.11/axis-cgi/mjpg/video.cgi?resolution=640x480&.mjpg");
+#endif
+            } while (m_grabber.Height == 0); 
+            Console.WriteLine("Found Image");
+
+            m_grabber.FlipHorizontal = true;
+            m_grabber.FlipVertical = true;
+
             //m_grabber = new Capture();
             m_switch = false;
+            m_table = table;
             m_captureThread = new Thread(run);
             m_captureThread.Start();
         }
@@ -35,7 +54,7 @@ namespace Camera2016
             while (true)
             {
                 m_grabber.Grab();
-                AngledMat image;
+                ImageBuffer image;
                 lock (m_mutex)
                 {
                     if (m_switch)
@@ -44,9 +63,12 @@ namespace Camera2016
                         image = m_buf2;
 
                     m_switch = !m_switch;
+                    m_updated = true;
                 }
-                image.GetValues();
+                image.GyroAngle = m_table.GetNumber("Gyro", 0.0);
+                image.ShooterAngle = m_table.GetNumber("TurretPot", 0.0);
                 m_grabber.Retrieve(image.Image);
+                
             }
         }
 
@@ -54,10 +76,12 @@ namespace Camera2016
         /// Get the image not currently being written to
         /// </summary>
         /// <returns></returns>
-        public AngledMat Image()
+        public ImageBuffer Image()
         {
             lock (m_mutex)
             {
+                if (!m_updated) return null;
+                m_updated = false;
                 return m_switch ? m_buf1.Clone() : m_buf2.Clone();
             }
         }
