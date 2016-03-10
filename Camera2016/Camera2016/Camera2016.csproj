@@ -44,13 +44,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Emgu.CV">
-      <HintPath>..\..\..\..\..\Documents\GitHub\FRC-2016-Camera\Camera2016\Camera2016\Emgu.CV.dll</HintPath>
+      <HintPath>.\Emgu.CV.dll</HintPath>
     </Reference>
     <Reference Include="Emgu.CV.UI">
-      <HintPath>..\..\..\..\..\..\..\Emgu\emgucv-windesktop 3.1.0.2282\bin\Emgu.CV.UI.dll</HintPath>
+      <HintPath>.\Emgu.CV.UI.dll</HintPath>
     </Reference>
     <Reference Include="Emgu.Util">
-      <HintPath>..\..\..\..\..\Documents\GitHub\FRC-2016-Camera\Camera2016\Camera2016\Emgu.Util.dll</HintPath>
+      <HintPath>.\Emgu.Util.dll</HintPath>
     </Reference>
     <Reference Include="NetworkTables, Version=2016.0.1.16, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\FRC.NetworkTables.2016.0.1.16\lib\net45\NetworkTables.dll</HintPath>
@@ -80,6 +80,12 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="cvextern.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="msvcp120.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="msvcr120.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="opencv_ffmpeg300.dll">
