@@ -251,7 +251,7 @@ namespace Camera2016
         static double TopTargetHeight = 89; //In Inches
 
         const double CameraShooterOffset = -6.0/12;
-
+        const double CameraAngle = 45;
 
 
 
@@ -266,23 +266,21 @@ namespace Camera2016
             y = -((2 * (y / ImageHeight)) - 1);
 
             double oldHeading = image.GyroAngle;
-            double currentAngle = image.ShooterAngle;
-
-            
+            //double currentAngle = image.ShooterAngle;
 
             double radiusShooter = 16.67;
-            double currentCameraHeight = Math.Sin(ToRadians(currentAngle + 6.67)) * radiusShooter + 10.0;//Some sin function I dont wanna do right now.
+            double currentCameraHeight = 13.5 / 12.0;//Math.Sin(ToRadians(currentAngle + 6.67)) * radiusShooter + 10.0;//Some sin function I dont wanna do right now.
             //Output in Meters
-            currentAngle = currentAngle - 25;//24.4
+            //currentAngle = currentAngle - 25;//24.4
 
-            double range = (TopTargetHeight - currentCameraHeight) / Math.Tan((y * VerticalFOVDeg / 2.0 + currentAngle) * (Math.PI / 180.0));
+            double range = (TopTargetHeight - currentCameraHeight) / Math.Tan((y * VerticalFOVDeg / 2.0 + CameraAngle) * (Math.PI / 180.0));
             //range *= 1.696;
             range = range / 12.0;
 
             ShooterOffsetDegreesX = Math.Asin(CameraShooterOffset/range)*(180.0/Math.PI);
 
             double azimuthX = BoundAngle0to360Degrees(x * HorizontalFOVDeg / 2.0 + oldHeading + ShooterOffsetDegreesX);
-            double azimuthY = BoundAngle0to360Degrees(y * VerticalFOVDeg / 2.0 + (currentAngle+22) + ShooterOffsetDegreesY);
+            double azimuthY = BoundAngle0to360Degrees(y * VerticalFOVDeg / 2.0 + (CameraAngle+22) + ShooterOffsetDegreesY);
 #if KANGAROO
             visionTable.PutNumber("Offset", ShooterOffsetDegreesX);
             visionTable.PutNumber("AzimuthX", azimuthX);
