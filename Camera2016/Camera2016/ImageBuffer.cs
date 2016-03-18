@@ -25,7 +25,10 @@ namespace Camera2016
 
         public ImageBuffer Clone()
         {
-            ImageBuffer buf = new ImageBuffer(Image.Clone());
+            Mat mat = new Mat();
+            CvInvoke.Transpose(Image, mat);
+
+            ImageBuffer buf = new ImageBuffer(mat);
             buf.GyroAngle = GyroAngle;
             buf.ShooterAngle = ShooterAngle;
             return buf;
