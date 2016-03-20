@@ -34,13 +34,13 @@ namespace Camera2016
 #if KANGAROO
                 m_grabber = new Capture(1);
 #else
-                m_grabber = new Capture(1);
+                m_grabber = new Capture(0);
 #endif
             } while (m_grabber.Height == 0); 
             Console.WriteLine("Found Image");
 
             //m_grabber.FlipHorizontal = true;
-            //m_grabber.FlipVertical = true;
+            m_grabber.FlipVertical = true;
 
             m_grabber.SetCaptureProperty(Emgu.CV.CvEnum.CapProp.FrameWidth, 1280);
             m_grabber.SetCaptureProperty(Emgu.CV.CvEnum.CapProp.FrameHeight, 720);

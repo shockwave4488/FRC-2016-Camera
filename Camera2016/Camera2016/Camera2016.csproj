@@ -53,8 +53,8 @@
       <HintPath>.\Emgu.Util.dll</HintPath>
     </Reference>
     <Reference Include="NetworkTables, Version=2016.0.1.16, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\FRC.NetworkTables.2016.0.1.16\lib\net45\NetworkTables.dll</HintPath>
-      <Private>True</Private>
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>.\NetworkTables.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -76,7 +76,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="cvextern.dll">

@@ -22,7 +22,7 @@ namespace Camera2016
         static MCvScalar Green = new MCvScalar(0, 255, 0);
         static MCvScalar Blue = new MCvScalar(255, 0, 0);
 
-        static  Point TextPoint = new Point(0, 20);
+        static Point TextPoint = new Point(0, 20);
 
         static void Main(string[] args)
         {
@@ -60,17 +60,24 @@ namespace Camera2016
             Point LeftMidPoint = new Point(0, (int)(ImageHeight / 2));
             Point RightMidPoint = new Point((int)ImageWidth, (int)(ImageHeight / 2));
 
-            
+
 
             Stopwatch sw = new Stopwatch();
 
             int count = 0;
 
-            visionTable.PutNumberArray("HSVLow", defaultLow);
-            visionTable.PutNumberArray("HSVHigh", defaultHigh);
+            //visionTable.PutNumberArray("HSVLow", defaultLow);
+            //visionTable.PutNumberArray("HSVHigh", defaultHigh);
 
             visionTable.PutNumber("ShooterOffsetDegreesX", ShooterOffsetDegreesX);
             visionTable.PutNumber("ShooterOffsetDegreesY", ShooterOffsetDegreesY);
+
+            System.Threading.Timer timer = new System.Threading.
+                Timer((o) =>
+            {
+                visionTable.PutNumber("Kangaroo Battery", System.Windows.Forms.SystemInformation.PowerStatus.BatteryLifePercent);
+                
+            }, null, 5000, 5000);
 
             int imageCount = 0;
 
@@ -83,12 +90,12 @@ namespace Camera2016
 #if KANGAROO
                 visionTable.PutNumber("KangarooHeartBeat", count);
 #endif
-
                 if (image == null || image.IsEmpty)
                 {
                     image?.Dispose();
                     continue;
                 }
+
                 double[] ntLow = visionTable.GetNumberArray("HSVLow", defaultLow);
                 double[] ntHigh = visionTable.GetNumberArray("HSVHigh", defaultHigh);
 
@@ -186,18 +193,18 @@ namespace Camera2016
                 }
 
                 //ToDo, Draw Crosshairs
-                CvInvoke.Line(image.Image, TopMidPoint, BottomMidPoint, Blue, 3);
-                CvInvoke.Line(image.Image, LeftMidPoint, RightMidPoint, Blue, 3);
+                //CvInvoke.Line(image.Image, TopMidPoint, BottomMidPoint, Blue, 3);
+                //CvInvoke.Line(image.Image, LeftMidPoint, RightMidPoint, Blue, 3);
 
                 int fps = (int)(1.0 / sw.Elapsed.TotalSeconds);
 
                 //CvInvoke.PutText(image.Image, fps.ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
 
                 imageCount++;
-                CvInvoke.Imshow("HSV", HsvOut);
+                //CvInvoke.Imshow("HSV", HsvOut);
                 CvInvoke.Imshow("MainWindow", image.Image);
                 image.Dispose();
-                
+
 
 
                 //report to NetworkTables
@@ -251,8 +258,8 @@ namespace Camera2016
 
         static double TopTargetHeight = 89; //In Inches
 
-        const double CameraShooterOffset = -12.5/12;
-        const double CameraAngle = 42.5;
+        const double CameraShooterOffset = -12.5 / 12;
+        const double CameraAngle = 40;
 
 
 
@@ -278,22 +285,27 @@ namespace Camera2016
             //range *= 1.696;
             range = range / 12.0;
 
-            ShooterOffsetDegreesX = Math.Asin(CameraShooterOffset/range)*(180.0/Math.PI);
+            //ShooterOffsetDegreesX = Math.Asin(CameraShooterOffset / range) * (180.0 / Math.PI);
+            
+            //CvInvoke.PutText(image.Image, range.ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
 
-             CvInvoke.PutText(image.Image, range.ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
-
-            double azimuthX = BoundAngle0to360Degrees(x * HorizontalFOVDeg / 2.0 + oldHeading + ShooterOffsetDegreesX);
-            double azimuthY = BoundAngle0to360Degrees(y * VerticalFOVDeg / 2.0 + (CameraAngle) + ShooterOffsetDegreesY);
-            visionTable.PutNumber("Offset", ShooterOffsetDegreesX);
+            double azimuthX = BoundAngleNeg180To180Degrees(x * HorizontalFOVDeg / 2.0 + oldHeading + ShooterOffsetDegreesX);
+            //double azimuthY = BoundAngleNeg180To180Degrees(y * VerticalFOVDeg / 2.0 + (CameraAngle) + ShooterOffsetDegreesY);
+            //visionTable.PutNumber("Offset", ShooterOffsetDegreesX);
             visionTable.PutNumber("AzimuthX", azimuthX);
-            visionTable.PutNumber("AzimuthY", azimuthY);
+            //visionTable.PutNumber("AzimuthY", azimuthY);
             visionTable.PutNumber("Range", range);
             NetworkTable.Flush();
         }
 
 
-        private static double BoundAngle0to360Degrees(double angle)
+        private static double BoundAngleNeg180To180Degrees(double angle)
         {
+            while (angle <= -180) angle += 360;
+            while (angle > 180) angle -= 360;
+            return angle;
+
+            /*
             // Naive algorithm
             while (angle >= 360.0)
             {
@@ -305,6 +317,7 @@ namespace Camera2016
             }
             return angle;
         }
-
+        */
+        }
     }
 }
