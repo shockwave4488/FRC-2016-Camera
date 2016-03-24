@@ -83,7 +83,10 @@ namespace Camera2016
         {
             lock (m_mutex)
             {
-                if (!m_updated) return null;
+                if (!m_updated)
+                {
+                    return null;
+                }
                 m_updated = false;
                 return m_switch ? m_buf1.Clone() : m_buf2.Clone();
             }

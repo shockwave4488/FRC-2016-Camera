@@ -38,7 +38,7 @@ namespace Camera2016
             //On kangaroo, use different table and don't display image
             visionTable = NetworkTable.GetTable("SmartDashboard");
 
-            ImageGrabber imageGrabber = new ImageGrabber(visionTable);
+            //ImageGrabber imageGrabber = new ImageGrabber(visionTable);
 
             Mat HsvIn = new Mat(), HsvOut = new Mat(), output = new Mat(), Temp = new Mat();
             VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
@@ -60,8 +60,6 @@ namespace Camera2016
             Point LeftMidPoint = new Point(0, (int)(ImageHeight / 2));
             Point RightMidPoint = new Point((int)ImageWidth, (int)(ImageHeight / 2));
 
-
-
             Stopwatch sw = new Stopwatch();
 
             int count = 0;
@@ -72,20 +70,38 @@ namespace Camera2016
             visionTable.PutNumber("ShooterOffsetDegreesX", ShooterOffsetDegreesX);
             visionTable.PutNumber("ShooterOffsetDegreesY", ShooterOffsetDegreesY);
 
-            System.Threading.Timer timer = new System.Threading.
-                Timer((o) =>
-            {
-                visionTable.PutNumber("Kangaroo Battery", System.Windows.Forms.SystemInformation.PowerStatus.BatteryLifePercent);
-                
-            }, null, 5000, 5000);
+            Thread timer = new Thread(() =>
+                {
+                    while (true)
+                    {
+                        visionTable.PutNumber("KangarooBattery",
+                            System.Windows.Forms.SystemInformation.PowerStatus.BatteryLifePercent);
+                        Thread.Sleep(5000);
+                    }
 
+                });
+            timer.Start();
+            GC.KeepAlive(timer);
             int imageCount = 0;
+
+            ImageBuffer im = new ImageBuffer();
+            Capture cap = new Capture(0);
+            cap.FlipVertical = true;
+
+            cap.SetCaptureProperty(Emgu.CV.CvEnum.CapProp.FrameWidth, 1280);
+            cap.SetCaptureProperty(Emgu.CV.CvEnum.CapProp.FrameHeight, 720);
 
             while (true)
             {
                 count++;
                 sw.Restart();
-                ImageBuffer image = imageGrabber.Image();
+                //ImageBuffer image = imageGrabber.Image();
+                cap.Grab();
+                im.GyroAngle = visionTable.GetNumber("Gyro", 0.0);
+                im.ShooterAngle = visionTable.GetNumber("TurretPot", 0.0);
+                cap.Retrieve(im.Image);
+
+                ImageBuffer image = im.Clone();
 
 #if KANGAROO
                 visionTable.PutNumber("KangarooHeartBeat", count);
@@ -93,6 +109,7 @@ namespace Camera2016
                 if (image == null || image.IsEmpty)
                 {
                     image?.Dispose();
+                    Thread.Yield();
                     continue;
                 }
 
@@ -108,7 +125,9 @@ namespace Camera2016
                 arrayLow.Push(ntLow);
                 arrayHigh.Clear();
                 arrayHigh.Push(ntHigh);
+                
 
+                
                 //HSV Filter
                 CvInvoke.CvtColor(image.Image, HsvIn, Emgu.CV.CvEnum.ColorConversion.Bgr2Hsv);
                 CvInvoke.InRange(HsvIn, arrayLow, arrayHigh, HsvOut);
@@ -127,7 +146,7 @@ namespace Camera2016
 
                 Rectangle? largestRectangle = null;
                 double currentLargestArea = 0.0;
-
+                
                 //Filter contours
                 for (int i = 0; i < convexHulls.Size; i++)
                 {
@@ -140,8 +159,16 @@ namespace Camera2016
 
                     //CvInvoke.DrawContours(image.Image, cont,-1, Green, 2);
 
-                    if (polygon.Size != 4) continue;
-                    if (!CvInvoke.IsContourConvex(polygon)) continue;
+                    if (polygon.Size != 4)
+                    {
+                        polygon.Dispose();
+                        continue;
+                    }
+                    if (!CvInvoke.IsContourConvex(polygon))
+                    {
+                        polygon.Dispose();
+                        continue;
+                    }
 
                     int numVertical = 0;
                     int numHorizontal = 0;
@@ -161,16 +188,28 @@ namespace Camera2016
                         if (slope < nearlyHorizontalSlope) numHorizontal++;
                     }
 
-                    if (numHorizontal < 1) continue;
+                    if (numHorizontal < 1)
+                    {
+                        polygon.Dispose();
+                        continue;
+                    }
 
                     Rectangle bounds = CvInvoke.BoundingRectangle(polygon);
 
                     double ratio = (double)bounds.Height / bounds.Width;
-                    if (ratio > 1.0 || ratio < .3) continue;
+                    if (ratio > 1.0 || ratio < .3)
+                    {
+                        polygon.Dispose();
+                        continue;
+                    }
 
                     double area = CvInvoke.ContourArea(contour);
 
-                    if (area < 100) continue;
+                    if (area < 100)
+                    {
+                        polygon.Dispose();
+                        continue;
+                    }
 
                     CvInvoke.Rectangle(image.Image, bounds, Blue, 2);
 
@@ -191,7 +230,7 @@ namespace Camera2016
                     ProcessData(largestRectangle.Value, image);
                     CvInvoke.Rectangle(image.Image, largestRectangle.Value, Red, 5);
                 }
-
+                
                 //ToDo, Draw Crosshairs
                 //CvInvoke.Line(image.Image, TopMidPoint, BottomMidPoint, Blue, 3);
                 //CvInvoke.Line(image.Image, LeftMidPoint, RightMidPoint, Blue, 3);
@@ -201,6 +240,7 @@ namespace Camera2016
                 //CvInvoke.PutText(image.Image, fps.ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
 
                 imageCount++;
+
                 //CvInvoke.Imshow("HSV", HsvOut);
                 CvInvoke.Imshow("MainWindow", image.Image);
                 image.Dispose();
