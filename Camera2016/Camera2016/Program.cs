@@ -85,7 +85,7 @@ namespace Camera2016
             int imageCount = 0;
 
             ImageBuffer im = new ImageBuffer();
-            Capture cap = new Capture(0);
+            Capture cap = new Capture(0); //Change me to 1 to use external camera
             cap.FlipVertical = true;
 
             cap.SetCaptureProperty(Emgu.CV.CvEnum.CapProp.FrameWidth, 1280);
@@ -125,8 +125,16 @@ namespace Camera2016
                 arrayLow.Push(ntLow);
                 arrayHigh.Clear();
                 arrayHigh.Push(ntHigh);
-                
 
+                Mat BlurTemp = new Mat();
+                int rdi = 1;
+                int kernalSize =  6 * rdi + 1;
+                CvInvoke.GaussianBlur(image.Image, BlurTemp, new Size(kernalSize, kernalSize), rdi);
+                //BlurTemp = image.Image;
+                //CvInvoke.Imshow("Blured", BlurTemp);
+                Mat oldImage = image.Image;
+                image.Image = BlurTemp;
+                oldImage.Dispose();
                 
                 //HSV Filter
                 CvInvoke.CvtColor(image.Image, HsvIn, Emgu.CV.CvEnum.ColorConversion.Bgr2Hsv);
@@ -164,6 +172,7 @@ namespace Camera2016
                         polygon.Dispose();
                         continue;
                     }
+
                     if (!CvInvoke.IsContourConvex(polygon))
                     {
                         polygon.Dispose();
@@ -195,6 +204,8 @@ namespace Camera2016
                     }
 
                     Rectangle bounds = CvInvoke.BoundingRectangle(polygon);
+
+                    //CvInvoke.PutText(image.Image, contours[i].Size.ToString(), bounds.Location, FontFace.HersheyComplex, 5, Blue);
 
                     double ratio = (double)bounds.Height / bounds.Width;
                     if (ratio > 1.0 || ratio < .3)
@@ -241,7 +252,7 @@ namespace Camera2016
 
                 imageCount++;
 
-                //CvInvoke.Imshow("HSV", HsvOut);
+                CvInvoke.Imshow("HSV", HsvOut);
                 CvInvoke.Imshow("MainWindow", image.Image);
                 image.Dispose();
 
