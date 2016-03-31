@@ -185,6 +185,7 @@ namespace Camera2016
 
                     ///////////////////////////////////////////////////////////////////////
                     // Filter if there isn't a nearly horizontal line
+                    ///////////////////////////////////////////////////////////////////////
                     //int numVertical = 0;
                     int numHorizontal = 0;
                     for (int j = 0; j < 4; j++)
@@ -212,6 +213,7 @@ namespace Camera2016
 
                     ///////////////////////////////////////////////////////////////////////
                     // Filter if polygon is above a set limit. This should remove overhead lights and windows
+                    ///////////////////////////////////////////////////////////////////////
                     Rectangle bounds = CvInvoke.BoundingRectangle(polygon);
                     int topY = 250;
                     if (bounds.Location.Y < topY)
@@ -225,6 +227,7 @@ namespace Camera2016
 
                     ///////////////////////////////////////////////////////////////////////
                     // Filter by height to width ratio
+                    ///////////////////////////////////////////////////////////////////////
                     double ratio = (double)bounds.Height / bounds.Width;
                     if (ratio > 1.0 || ratio < .3)
                     {
@@ -235,13 +238,14 @@ namespace Camera2016
 
                     ///////////////////////////////////////////////////////////////////////
                     // Filter by area to vertical position ratio
+                    ///////////////////////////////////////////////////////////////////////
                     double area = CvInvoke.ContourArea(contour);
                     //double botArea = 25000;
                     //double topArea = 6000;
                     //double botY = 850;
-                    double sizeVertRatio = area / (1280 - bounds.Location.Y);
+                    double areaVertRatio = area / (1280 - bounds.Location.Y);
 
-                    if (sizeVertRatio < 15 || sizeVertRatio > 30)
+                    if (areaVertRatio < 15 || areaVertRatio > 30)
                     {
                         polygon.Dispose();
                         continue;
@@ -250,7 +254,7 @@ namespace Camera2016
 
                     CvInvoke.PutText(image.Image, "Vertical: " + (1280 - bounds.Location.Y).ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
                     CvInvoke.PutText(image.Image, "Area: " + area.ToString(), TextPoint2, FontFace.HersheyPlain, 2, Green);
-                    CvInvoke.PutText(image.Image, "Area/Vert: " + sizeVertRatio.ToString(), TextPoint3, FontFace.HersheyPlain, 2, Green);
+                    CvInvoke.PutText(image.Image, "Area/Vert: " + areaVertRatio.ToString(), TextPoint3, FontFace.HersheyPlain, 2, Green);
 
                     CvInvoke.Rectangle(image.Image, bounds, Blue, 2);
 
