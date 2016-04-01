@@ -51,7 +51,7 @@ namespace Camera2016
             //MCvScalar high = new MCvScalar(97, 255, 255);
 
             double[] defaultLow = new double[] { 50, 44, 193 };
-            double[] defaultHigh = new double[] { 110, 255, 255 };
+            double[] defaultHigh = new double[] { 90, 255, 255 };
 
             VectorOfDouble arrayLow = new VectorOfDouble(3);
             VectorOfDouble arrayHigh = new VectorOfDouble(3);
@@ -87,7 +87,7 @@ namespace Camera2016
             int imageCount = 0;
 
             ImageBuffer im = new ImageBuffer();
-            Capture cap = new Capture(0); //Change me to 1 to use external camera
+            Capture cap = new Capture(1); //Change me to 1 to use external camera
             cap.FlipVertical = true;
 
             cap.SetCaptureProperty(Emgu.CV.CvEnum.CapProp.FrameWidth, 1280);
@@ -215,7 +215,7 @@ namespace Camera2016
                     // Filter if polygon is above a set limit. This should remove overhead lights and windows
                     ///////////////////////////////////////////////////////////////////////
                     Rectangle bounds = CvInvoke.BoundingRectangle(polygon);
-                    int topY = 250;
+                    int topY = 350;
                     if (bounds.Location.Y < topY)
                     {
                         polygon.Dispose();
@@ -240,12 +240,9 @@ namespace Camera2016
                     // Filter by area to vertical position ratio
                     ///////////////////////////////////////////////////////////////////////
                     double area = CvInvoke.ContourArea(contour);
-                    //double botArea = 25000;
-                    //double topArea = 6000;
-                    //double botY = 850;
                     double areaVertRatio = area / (1280 - bounds.Location.Y);
 
-                    if (areaVertRatio < 15 || areaVertRatio > 30)
+                    if (areaVertRatio < 13 || areaVertRatio > 19)
                     {
                         polygon.Dispose();
                         continue;
