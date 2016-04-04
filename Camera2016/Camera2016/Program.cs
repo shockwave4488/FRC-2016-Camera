@@ -87,7 +87,7 @@ namespace Camera2016
             int imageCount = 0;
 
             ImageBuffer im = new ImageBuffer();
-            Capture cap = new Capture(1); //Change me to 1 to use external camera
+            Capture cap = new Capture(0); //Change me to 1 to use external camera
             cap.FlipVertical = true;
 
             cap.SetCaptureProperty(Emgu.CV.CvEnum.CapProp.FrameWidth, 1280);
