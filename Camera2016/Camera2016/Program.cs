@@ -91,6 +91,9 @@ namespace Camera2016
             cap.SetCaptureProperty(Emgu.CV.CvEnum.CapProp.FrameWidth, 1280);
             cap.SetCaptureProperty(Emgu.CV.CvEnum.CapProp.FrameHeight, 720);
 
+            ImageSaver saver = new ImageSaver();
+            int saveCount = 0;
+
             while (true)
             {
                 count++;
@@ -111,6 +114,16 @@ namespace Camera2016
                     image?.Dispose();
                     Thread.Yield();
                     continue;
+                }
+
+                if (visionTable.GetBoolean("LightsOn", false))
+                {
+                    saveCount++;
+                    if (saveCount >= 6)
+                    {
+                        saver.AddToQueue(image.Image);
+                        saveCount = 0;
+                    }
                 }
 
                 double[] ntLow = visionTable.GetNumberArray("HSVLow", defaultLow);
