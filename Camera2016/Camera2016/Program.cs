@@ -23,6 +23,8 @@ namespace Camera2016
         static MCvScalar Blue = new MCvScalar(255, 0, 0);
 
         static Point TextPoint = new Point(0, 20);
+        static Point TextPoint2 = new Point(0, 50);
+        static Point TextPoint3 = new Point(0, 80);
 
         static void Main(string[] args)
         {
@@ -49,7 +51,7 @@ namespace Camera2016
             //MCvScalar high = new MCvScalar(97, 255, 255);
 
             double[] defaultLow = new double[] { 50, 44, 193 };
-            double[] defaultHigh = new double[] { 110, 255, 255 };
+            double[] defaultHigh = new double[] { 90, 255, 255 };
 
             VectorOfDouble arrayLow = new VectorOfDouble(3);
             VectorOfDouble arrayHigh = new VectorOfDouble(3);
@@ -93,6 +95,9 @@ namespace Camera2016
 
             ImageSaver saver = new ImageSaver();
             int saveCount = 0;
+            int rdi = 1;
+            int kernalSize = 6 * rdi + 1;
+            Size ksize = new Size(kernalSize, kernalSize);
 
             while (true)
             {
@@ -140,15 +145,11 @@ namespace Camera2016
                 arrayHigh.Push(ntHigh);
 
                 Mat BlurTemp = new Mat();
-                int rdi = 1;
-                int kernalSize =  6 * rdi + 1;
-                CvInvoke.GaussianBlur(image.Image, BlurTemp, new Size(kernalSize, kernalSize), rdi);
-                //BlurTemp = image.Image;
-                //CvInvoke.Imshow("Blured", BlurTemp);
+                CvInvoke.GaussianBlur(image.Image, BlurTemp, ksize, rdi);
                 Mat oldImage = image.Image;
                 image.Image = BlurTemp;
                 oldImage.Dispose();
-                
+
                 //HSV Filter
                 CvInvoke.CvtColor(image.Image, HsvIn, Emgu.CV.CvEnum.ColorConversion.Bgr2Hsv);
                 CvInvoke.InRange(HsvIn, arrayLow, arrayHigh, HsvOut);
@@ -167,7 +168,7 @@ namespace Camera2016
 
                 Rectangle? largestRectangle = null;
                 double currentLargestArea = 0.0;
-                
+
                 //Filter contours
                 for (int i = 0; i < convexHulls.Size; i++)
                 {
@@ -180,19 +181,24 @@ namespace Camera2016
 
                     //CvInvoke.DrawContours(image.Image, cont,-1, Green, 2);
 
+                    // Filter if shape has more than 4 corners after contour is applied
                     if (polygon.Size != 4)
                     {
                         polygon.Dispose();
                         continue;
                     }
 
+                    // Filter if not convex
                     if (!CvInvoke.IsContourConvex(polygon))
                     {
                         polygon.Dispose();
                         continue;
                     }
 
-                    int numVertical = 0;
+                    ///////////////////////////////////////////////////////////////////////
+                    // Filter if there isn't a nearly horizontal line
+                    ///////////////////////////////////////////////////////////////////////
+                    //int numVertical = 0;
                     int numHorizontal = 0;
                     for (int j = 0; j < 4; j++)
                     {
@@ -203,10 +209,10 @@ namespace Camera2016
                         if (dx != 0) slope = Math.Abs(dy / dx);
 
                         double nearlyHorizontalSlope = Math.Tan(ToRadians(20));
-                        double rad = ToRadians(60);
-                        double nearlyVerticalSlope = Math.Tan(rad);
+                        //double rad = ToRadians(60);
+                        //double nearlyVerticalSlope = Math.Tan(rad);
 
-                        if (slope > nearlyVerticalSlope) numVertical++;
+                        //if (slope > nearlyVerticalSlope) numVertical++;
                         if (slope < nearlyHorizontalSlope) numHorizontal++;
                     }
 
@@ -215,25 +221,49 @@ namespace Camera2016
                         polygon.Dispose();
                         continue;
                     }
+                    ///////////////////////////////////////////////////////////////////////
 
+                    ///////////////////////////////////////////////////////////////////////
+                    // Filter if polygon is above a set limit. This should remove overhead lights and windows
+                    ///////////////////////////////////////////////////////////////////////
                     Rectangle bounds = CvInvoke.BoundingRectangle(polygon);
+                    int topY = 350;
+                    if (bounds.Location.Y < topY)
+                    {
+                        polygon.Dispose();
+                        continue;
+                    }
+                    ///////////////////////////////////////////////////////////////////////
 
-                    //CvInvoke.PutText(image.Image, contours[i].Size.ToString(), bounds.Location, FontFace.HersheyComplex, 5, Blue);
+                    //CvInvoke.PutText(image.Image, contours[i].Size.ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
 
+                    ///////////////////////////////////////////////////////////////////////
+                    // Filter by height to width ratio
+                    ///////////////////////////////////////////////////////////////////////
                     double ratio = (double)bounds.Height / bounds.Width;
                     if (ratio > 1.0 || ratio < .3)
                     {
                         polygon.Dispose();
                         continue;
                     }
+                    ///////////////////////////////////////////////////////////////////////
 
+                    ///////////////////////////////////////////////////////////////////////
+                    // Filter by area to vertical position ratio
+                    ///////////////////////////////////////////////////////////////////////
                     double area = CvInvoke.ContourArea(contour);
+                    double areaVertRatio = area / (1280 - bounds.Location.Y);
 
-                    if (area < 100)
+                    if (areaVertRatio < 13 || areaVertRatio > 19)
                     {
                         polygon.Dispose();
                         continue;
                     }
+                    ///////////////////////////////////////////////////////////////////////
+
+                    CvInvoke.PutText(image.Image, "Vertical: " + (1280 - bounds.Location.Y).ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
+                    CvInvoke.PutText(image.Image, "Area: " + area.ToString(), TextPoint2, FontFace.HersheyPlain, 2, Green);
+                    CvInvoke.PutText(image.Image, "Area/Vert: " + areaVertRatio.ToString(), TextPoint3, FontFace.HersheyPlain, 2, Green);
 
                     CvInvoke.Rectangle(image.Image, bounds, Blue, 2);
 
@@ -244,7 +274,6 @@ namespace Camera2016
 
                     //filteredContours.Push(contour);
 
-
                     polygon.Dispose();
                 }
                 visionTable.PutBoolean("TargetFound", largestRectangle != null);
@@ -254,13 +283,12 @@ namespace Camera2016
                     ProcessData(largestRectangle.Value, image);
                     CvInvoke.Rectangle(image.Image, largestRectangle.Value, Red, 5);
                 }
-                
+
                 //ToDo, Draw Crosshairs
                 //CvInvoke.Line(image.Image, TopMidPoint, BottomMidPoint, Blue, 3);
                 //CvInvoke.Line(image.Image, LeftMidPoint, RightMidPoint, Blue, 3);
 
-                int fps = (int)(1.0 / sw.Elapsed.TotalSeconds);
-
+                //int fps = (int)(1.0 / sw.Elapsed.TotalSeconds);
                 //CvInvoke.PutText(image.Image, fps.ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
 
                 imageCount++;
