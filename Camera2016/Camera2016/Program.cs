@@ -254,7 +254,7 @@ namespace Camera2016
                     double area = CvInvoke.ContourArea(contour);
                     double areaVertRatio = area / (1280 - bounds.Location.Y);
 
-                    if (areaVertRatio < 13 || areaVertRatio > 19)
+                    if (areaVertRatio < 11.25 || areaVertRatio > 19)
                     {
                         polygon.Dispose();
                         continue;
