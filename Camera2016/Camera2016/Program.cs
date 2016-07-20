@@ -25,6 +25,8 @@ namespace Camera2016
         static Point TextPoint = new Point(0, 20);
         static Point TextPoint2 = new Point(0, 50);
         static Point TextPoint3 = new Point(0, 80);
+        static Point TextPoint4 = new Point(0, 110);
+        static Point TextPoint5 = new Point(0, 140);
 
         static void Main(string[] args)
         {
@@ -106,7 +108,6 @@ namespace Camera2016
                 //ImageBuffer image = imageGrabber.Image();
                 cap.Grab();
                 im.GyroAngle = visionTable.GetNumber("Gyro", 0.0);
-                im.ShooterAngle = visionTable.GetNumber("TurretPot", 0.0);
                 cap.Retrieve(im.Image);
 
                 ImageBuffer image = im.Clone();
@@ -254,7 +255,7 @@ namespace Camera2016
                     double area = CvInvoke.ContourArea(contour);
                     double areaVertRatio = area / (1280 - bounds.Location.Y);
 
-                    if (areaVertRatio < 11.25 || areaVertRatio > 19)
+                    if (areaVertRatio < 9 || areaVertRatio > 19)
                     {
                         polygon.Dispose();
                         continue;
@@ -277,6 +278,8 @@ namespace Camera2016
                     polygon.Dispose();
                 }
                 visionTable.PutBoolean("TargetFound", largestRectangle != null);
+                //CvInvoke.PutText(image.Image, "Target found: " + (largestRectangle != null).ToString(), TextPoint5, FontFace.HersheyPlain, 2, Green);
+
 
                 if (largestRectangle != null)
                 {
@@ -293,7 +296,7 @@ namespace Camera2016
 
                 imageCount++;
 
-                CvInvoke.Imshow("HSV", HsvOut);
+                //CvInvoke.Imshow("HSV", HsvOut);
                 CvInvoke.Imshow("MainWindow", image.Image);
                 image.Dispose();
 
@@ -348,47 +351,54 @@ namespace Camera2016
         static double ShooterOffsetDegreesX = 0;
         private static double ShooterOffsetDegreesY = 0;
 
-        static double TopTargetHeight = 89; //In Inches
-
-        const double CameraShooterOffset = -12.5 / 12;
-        const double CameraAngle = 40;
-
-
+        static double TopTargetCenterHeight = 90; //In Inches
+        
+        const double CameraVerticalAngle = 33; //Relative to ground
+        const double currentCameraHeight = 13.5;
 
         public static void ProcessData(Rectangle valid, ImageBuffer image)
         {
-            //ShooterOffsetDegreesX = visionTable.GetNumber("ShooterOffsetDegreesX", 0.0);
-            //ShooterOffsetDegreesY = visionTable.GetNumber("ShooterOffsetDegreesY", 0.0);
-
             double x = valid.X + (valid.Width / 2.0);
             x = (2 * (x / ImageWidth)) - 1;
             double y = valid.Y + (valid.Height / 2.0);
             y = -((2 * (y / ImageHeight)) - 1);
 
             double oldHeading = image.GyroAngle;
-            //double currentAngle = image.ShooterAngle;
-
-            double radiusShooter = 16.67;
-            double currentCameraHeight = 14.75 / 12.0;//Math.Sin(ToRadians(currentAngle + 6.67)) * radiusShooter + 10.0;//Some sin function I dont wanna do right now.
-            //Output in Meters
-            //currentAngle = currentAngle - 25;//24.4
-
-            double range = (TopTargetHeight - currentCameraHeight) / Math.Tan((y * VerticalFOVDeg / 2.0 + CameraAngle) * (Math.PI / 180.0));
-            //range *= 1.696;
-            range = range / 12.0;
-
-            //ShooterOffsetDegreesX = Math.Asin(CameraShooterOffset / range) * (180.0 / Math.PI);
-            
-            //CvInvoke.PutText(image.Image, range.ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
+            double range = (TopTargetCenterHeight - currentCameraHeight) / Math.Tan((y * VerticalFOVDeg / 2.0 + CameraVerticalAngle) * (Math.PI / 180.0));
+            //CvInvoke.PutText(image.Image, "Range: " + range.ToString(), TextPoint4, FontFace.HersheyPlain, 2, Green);
 
             double azimuthX = BoundAngleNeg180To180Degrees(x * HorizontalFOVDeg / 2.0 + oldHeading + ShooterOffsetDegreesX);
-            //double azimuthY = BoundAngleNeg180To180Degrees(y * VerticalFOVDeg / 2.0 + (CameraAngle) + ShooterOffsetDegreesY);
-            //visionTable.PutNumber("Offset", ShooterOffsetDegreesX);
             visionTable.PutNumber("AzimuthX", azimuthX);
-            //visionTable.PutNumber("AzimuthY", azimuthY);
-            visionTable.PutNumber("Range", range);
+            visionTable.PutNumber("Range", range); // in inches
             NetworkTable.Flush();
         }
+
+        /*
+        public static void ProcessData(Rectangle target, ImageBuffer image)
+        {
+            //ShooterOffsetDegreesX = visionTable.GetNumber("ShooterOffsetDegreesX", 0.0);
+            //ShooterOffsetDegreesY = visionTable.GetNumber("ShooterOffsetDegreesY", 0.0);
+
+            double targetCenterY = target.Y + (target.Height / 2.0); //Calculate center y coordinate of target
+            double relativeTargetY = 1 - (targetCenterY / ImageHeight); //Find relative center position vs image height. Subtract 1 to invert since 1280 is at bottom
+            double cameraHeight = 14.75; //Inches from ground to camera lens
+            double range = (TopTargetCenterHeight - cameraHeight) / Math.Tan((relativeTargetY * VerticalFOVDeg - (VerticalFOVDeg / 2.0) + CameraVerticalAngle) * (Math.PI / 180.0));
+            range = range / 12.0;
+
+            CvInvoke.PutText(image.Image, range.ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
+
+            double oldHeading = image.GyroAngle;
+            double targetCenterX = target.X + (target.Width / 2.0); //Calculate center x coordinate of target
+            double relativeTargetX = targetCenterX / ImageWidth; //Find relative center position vs image width
+            double targetHorizontalAngle = relativeTargetX * HorizontalFOVDeg - (HorizontalFOVDeg / 2.0) + oldHeading;
+
+            CvInvoke.PutText(image.Image, targetHorizontalAngle.ToString(), TextPoint2, FontFace.HersheyPlain, 2, Green);
+
+            //visionTable.PutNumber("Offset", ShooterOffsetDegreesX);
+            visionTable.PutNumber("AzimuthX", targetHorizontalAngle);
+            visionTable.PutNumber("Range", range);
+            NetworkTable.Flush();
+        }*/
 
 
         private static double BoundAngleNeg180To180Degrees(double angle)
@@ -410,6 +420,6 @@ namespace Camera2016
             return angle;
         }
         */
-        }
+    }
     }
 }
