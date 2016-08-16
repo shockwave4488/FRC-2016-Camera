@@ -66,6 +66,8 @@ namespace Camera2016
 
             Stopwatch sw = new Stopwatch();
 
+            CameraWatcher cameraChecker = new CameraWatcher();
+
             int count = 0;
 
             //visionTable.PutNumberArray("HSVLow", defaultLow);
@@ -78,8 +80,33 @@ namespace Camera2016
                 {
                     while (true)
                     {
+                        // update kangaroo battery info
                         visionTable.PutNumber("KangarooBattery",
                             System.Windows.Forms.SystemInformation.PowerStatus.BatteryLifePercent);
+
+                        // check camera status
+                        int cameraState = cameraChecker.CheckState;
+                        // camera states:
+                        // 0 = Camera is found and working
+                        // 1 = Camera is not found, waiting for reconnect to reinitialize
+                        // 2 = Camera was found again, re-init was kicked off
+                        visionTable.PutNumber("CameraState", cameraState);
+                        if (cameraState == 0)
+                        {
+                            // Camera is connected and fine
+                            Console.WriteLine("Camera alive");
+                        }
+                        else if (cameraState == 1)
+                        {
+                            // Camera is disconnected or having problems
+                            Console.WriteLine("Camera dead, waiting for reconnect");
+                        }
+                        else if (cameraState == 2)
+                        {
+                            // Camera reconnected
+                            Console.WriteLine("Camera found again, reinitializing");
+                            Process.Start("C:/Users/Shockwave/Desktop/NewKangaroo/cameraRestart.exe"); // Launch external exe to kill process, set up camera, and restart
+                        }
                         Thread.Sleep(5000);
                     }
 
@@ -122,6 +149,8 @@ namespace Camera2016
                     continue;
                 }
 
+                /*
+                // Image saver for debugging
                 if (visionTable.GetBoolean("LightsOn", false))
                 {
                     saveCount++;
@@ -130,7 +159,7 @@ namespace Camera2016
                         saver.AddToQueue(image.Image);
                         saveCount = 0;
                     }
-                }
+                }*/
 
                 double[] ntLow = visionTable.GetNumberArray("HSVLow", defaultLow);
                 double[] ntHigh = visionTable.GetNumberArray("HSVHigh", defaultHigh);
@@ -239,6 +268,29 @@ namespace Camera2016
                     //CvInvoke.PutText(image.Image, contours[i].Size.ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
 
                     ///////////////////////////////////////////////////////////////////////
+                    // Filter by minimum and maximum height
+                    ///////////////////////////////////////////////////////////////////////
+                    /*
+                    if (bounds.Height < 1 || bounds.Height > 1)
+                    {
+                        polygon.Dispose();
+                        continue;
+                    }*/
+                    ///////////////////////////////////////////////////////////////////////
+
+                    ///////////////////////////////////////////////////////////////////////
+                    // Filter by minimum and maximum width
+                    ///////////////////////////////////////////////////////////////////////
+                    /*if (bounds.Width < 1 || bounds.Width > 1)
+                    {
+                        polygon.Dispose();
+                        continue;
+                    }*/
+                    ///////////////////////////////////////////////////////////////////////
+
+                    CvInvoke.PutText(image.Image, "Image size Height and Width: " + bounds.Height.ToString() + " , " + bounds.Width, TextPoint4, FontFace.HersheyPlain, 2, Green);
+
+                    ///////////////////////////////////////////////////////////////////////
                     // Filter by height to width ratio
                     ///////////////////////////////////////////////////////////////////////
                     double ratio = (double)bounds.Height / bounds.Width;
@@ -265,6 +317,7 @@ namespace Camera2016
                     CvInvoke.PutText(image.Image, "Vertical: " + (1280 - bounds.Location.Y).ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
                     CvInvoke.PutText(image.Image, "Area: " + area.ToString(), TextPoint2, FontFace.HersheyPlain, 2, Green);
                     CvInvoke.PutText(image.Image, "Area/Vert: " + areaVertRatio.ToString(), TextPoint3, FontFace.HersheyPlain, 2, Green);
+
 
                     CvInvoke.Rectangle(image.Image, bounds, Blue, 2);
 
