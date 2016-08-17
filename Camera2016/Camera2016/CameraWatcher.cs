@@ -14,6 +14,7 @@ namespace Camera2016
         private UsbManager usbInfo = new UsbManager();
         private int m_cameraState = 0;
         private bool m_cameraFound = false;
+        private int m_pollInterval = 500; // in ms
 
         // camera states:
         // 0 = Camera is found and working
@@ -51,22 +52,28 @@ namespace Camera2016
                 {
                     if (usbDevice.Description.Equals("Logitech USB Camera (HD Pro Webcam C920)"))
                     {
-                        Console.WriteLine("Camera found");
+                        //Console.WriteLine("Camera found");
                         m_cameraFound = true;
                     }                 
                 }
 
                 if (m_cameraFound && m_cameraState == 1)
                 {
-                    m_cameraState = 2;
+                    lock (m_lockObject)
+                    {
+                        m_cameraState = 2;
+                    }
                 }else if (!m_cameraFound && m_cameraState == 0)
                 {
                     // camera has been disconnected
                     // set flag to 1 and wait for camera reconnect
-                    m_cameraState = 1;
+                    lock (m_lockObject)
+                    {
+                        m_cameraState = 1;
+                    }
                 }
 
-            }, null, 1000, 1000);
+            }, null, m_pollInterval, m_pollInterval);
         }
     }
 }

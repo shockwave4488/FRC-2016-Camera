@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Management; // need to add System.Management to your project references.
+using System.Management;
 
 namespace Camera2016
 {
@@ -15,8 +15,7 @@ namespace Camera2016
 
             foreach (var usbDevice in usbDevices)
             {
-                Console.WriteLine("Device ID: {0}, PNP Device ID: {1}, Description: {2}",
-                    usbDevice.DeviceID, usbDevice.PnpDeviceID, usbDevice.Description);
+                Console.WriteLine("Description: {0}", usbDevice.Description);
             }
 
             Console.Read();
@@ -33,8 +32,6 @@ namespace Camera2016
             foreach (var device in collection)
             {
                 devices.Add(new USBDeviceInfo(
-                (string)device.GetPropertyValue("DeviceID"),
-                (string)device.GetPropertyValue("PNPDeviceID"),
                 (string)device.GetPropertyValue("Description")
                 ));
             }
@@ -46,14 +43,10 @@ namespace Camera2016
 
     class USBDeviceInfo
     {
-        public USBDeviceInfo(string deviceID, string pnpDeviceID, string description)
+        public USBDeviceInfo(string description)
         {
-            this.DeviceID = deviceID;
-            this.PnpDeviceID = pnpDeviceID;
             this.Description = description;
         }
-        public string DeviceID { get; private set; }
-        public string PnpDeviceID { get; private set; }
         public string Description { get; private set; }
     }
 }

@@ -70,6 +70,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CameraWatcher.cs" />
+    <Compile Include="UsbManager2.cs" />
     <Compile Include="UsbManager.cs" />
     <Compile Include="ImageBuffer.cs" />
     <Compile Include="ImageGrabber.cs" />

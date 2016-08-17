@@ -67,6 +67,8 @@ namespace Camera2016
             Stopwatch sw = new Stopwatch();
 
             CameraWatcher cameraChecker = new CameraWatcher();
+            //UsbManager2 cameraChecker = new UsbManager2();
+            //cameraChecker.startWatcher();
 
             int count = 0;
 
@@ -83,7 +85,7 @@ namespace Camera2016
                         // update kangaroo battery info
                         visionTable.PutNumber("KangarooBattery",
                             System.Windows.Forms.SystemInformation.PowerStatus.BatteryLifePercent);
-
+                        
                         // check camera status
                         int cameraState = cameraChecker.CheckState;
                         // camera states:
@@ -94,19 +96,20 @@ namespace Camera2016
                         if (cameraState == 0)
                         {
                             // Camera is connected and fine
-                            Console.WriteLine("Camera alive");
+                            //Console.WriteLine("Camera alive");
                         }
                         else if (cameraState == 1)
                         {
                             // Camera is disconnected or having problems
-                            Console.WriteLine("Camera dead, waiting for reconnect");
+                            //Console.WriteLine("Camera dead, waiting for reconnect");
                         }
                         else if (cameraState == 2)
                         {
                             // Camera reconnected
-                            Console.WriteLine("Camera found again, reinitializing");
+                            //Console.WriteLine("Camera found again, reinitializing");
                             Process.Start("C:/Users/Shockwave/Desktop/NewKangaroo/cameraRestart.exe"); // Launch external exe to kill process, set up camera, and restart
                         }
+                        
                         Thread.Sleep(5000);
                     }
 
@@ -123,7 +126,7 @@ namespace Camera2016
             cap.SetCaptureProperty(Emgu.CV.CvEnum.CapProp.FrameHeight, 720);
 
             ImageSaver saver = new ImageSaver();
-            int saveCount = 0;
+            //int saveCount = 0;
             int rdi = 1;
             int kernalSize = 6 * rdi + 1;
             Size ksize = new Size(kernalSize, kernalSize);
@@ -257,12 +260,13 @@ namespace Camera2016
                     // Filter if polygon is above a set limit. This should remove overhead lights and windows
                     ///////////////////////////////////////////////////////////////////////
                     Rectangle bounds = CvInvoke.BoundingRectangle(polygon);
-                    int topY = 350;
+                    int topY = 300;
                     if (bounds.Location.Y < topY)
                     {
                         polygon.Dispose();
                         continue;
                     }
+                    CvInvoke.PutText(image.Image, "Vertical: " + (1280 - bounds.Location.Y).ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
                     ///////////////////////////////////////////////////////////////////////
 
                     //CvInvoke.PutText(image.Image, contours[i].Size.ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
@@ -270,30 +274,30 @@ namespace Camera2016
                     ///////////////////////////////////////////////////////////////////////
                     // Filter by minimum and maximum height
                     ///////////////////////////////////////////////////////////////////////
-                    /*
-                    if (bounds.Height < 1 || bounds.Height > 1)
+                    if (bounds.Height < 55  || bounds.Height > 95)
                     {
                         polygon.Dispose();
                         continue;
-                    }*/
+                    }
                     ///////////////////////////////////////////////////////////////////////
 
                     ///////////////////////////////////////////////////////////////////////
                     // Filter by minimum and maximum width
                     ///////////////////////////////////////////////////////////////////////
-                    /*if (bounds.Width < 1 || bounds.Width > 1)
+                    if (bounds.Width < 75 || bounds.Width > 215)
                     {
                         polygon.Dispose();
                         continue;
-                    }*/
+                    }
                     ///////////////////////////////////////////////////////////////////////
 
-                    CvInvoke.PutText(image.Image, "Image size Height and Width: " + bounds.Height.ToString() + " , " + bounds.Width, TextPoint4, FontFace.HersheyPlain, 2, Green);
+                    CvInvoke.PutText(image.Image, "Image size Height and Width: " + bounds.Height.ToString() + " , " + bounds.Width, TextPoint2, FontFace.HersheyPlain, 2, Green);
 
                     ///////////////////////////////////////////////////////////////////////
                     // Filter by height to width ratio
                     ///////////////////////////////////////////////////////////////////////
                     double ratio = (double)bounds.Height / bounds.Width;
+                    CvInvoke.PutText(image.Image, "Ratio: " + ratio.ToString(), TextPoint4, FontFace.HersheyPlain, 2, Green);
                     if (ratio > 1.0 || ratio < .3)
                     {
                         polygon.Dispose();
@@ -307,16 +311,15 @@ namespace Camera2016
                     double area = CvInvoke.ContourArea(contour);
                     double areaVertRatio = area / (1280 - bounds.Location.Y);
 
-                    if (areaVertRatio < 9 || areaVertRatio > 19)
+                    if (areaVertRatio < 8.5 || areaVertRatio > 19)
                     {
                         polygon.Dispose();
                         continue;
                     }
                     ///////////////////////////////////////////////////////////////////////
 
-                    CvInvoke.PutText(image.Image, "Vertical: " + (1280 - bounds.Location.Y).ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
-                    CvInvoke.PutText(image.Image, "Area: " + area.ToString(), TextPoint2, FontFace.HersheyPlain, 2, Green);
-                    CvInvoke.PutText(image.Image, "Area/Vert: " + areaVertRatio.ToString(), TextPoint3, FontFace.HersheyPlain, 2, Green);
+                    //CvInvoke.PutText(image.Image, "Area: " + area.ToString(), TextPoint2, FontFace.HersheyPlain, 2, Green);
+                    CvInvoke.PutText(image.Image, "Area/Vert Ratio: " + areaVertRatio.ToString(), TextPoint3, FontFace.HersheyPlain, 2, Green);
 
 
                     CvInvoke.Rectangle(image.Image, bounds, Blue, 2);
@@ -349,8 +352,10 @@ namespace Camera2016
 
                 imageCount++;
 
+                // Uncomment below to see the HSV window
                 //CvInvoke.Imshow("HSV", HsvOut);
-                CvInvoke.Imshow("MainWindow", image.Image);
+                // Uncomment below to see the main image window
+                //CvInvoke.Imshow("MainWindow", image.Image);
                 image.Dispose();
 
 
