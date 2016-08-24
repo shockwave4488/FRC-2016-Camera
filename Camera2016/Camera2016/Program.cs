@@ -75,8 +75,8 @@ namespace Camera2016
             //visionTable.PutNumberArray("HSVLow", defaultLow);
             //visionTable.PutNumberArray("HSVHigh", defaultHigh);
 
-            visionTable.PutNumber("ShooterOffsetDegreesX", ShooterOffsetDegreesX);
-            visionTable.PutNumber("ShooterOffsetDegreesY", ShooterOffsetDegreesY);
+            //visionTable.PutNumber("ShooterOffsetDegreesX", ShooterOffsetDegreesX);
+            //visionTable.PutNumber("ShooterOffsetDegreesY", ShooterOffsetDegreesY);
 
             Thread timer = new Thread(() =>
                 {
@@ -255,26 +255,27 @@ namespace Camera2016
                         continue;
                     }
                     ///////////////////////////////////////////////////////////////////////
+                    //CvInvoke.PutText(image.Image, "Number of horizontal (>=1): " + (numHorizontal).ToString(), TextPoint4, FontFace.HersheyPlain, 2, Green);
 
                     ///////////////////////////////////////////////////////////////////////
                     // Filter if polygon is above a set limit. This should remove overhead lights and windows
                     ///////////////////////////////////////////////////////////////////////
                     Rectangle bounds = CvInvoke.BoundingRectangle(polygon);
+                    CvInvoke.PutText(image.Image, "Vertical (>=300): " + (bounds.Location.Y).ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
                     int topY = 300;
                     if (bounds.Location.Y < topY)
                     {
                         polygon.Dispose();
                         continue;
                     }
-                    CvInvoke.PutText(image.Image, "Vertical: " + (1280 - bounds.Location.Y).ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
                     ///////////////////////////////////////////////////////////////////////
 
-                    //CvInvoke.PutText(image.Image, contours[i].Size.ToString(), TextPoint, FontFace.HersheyPlain, 2, Green);
+                    CvInvoke.PutText(image.Image, "Image Height (45-115) and Width (65-225): " + bounds.Height.ToString() + " , " + bounds.Width, TextPoint2, FontFace.HersheyPlain, 2, Green);
 
                     ///////////////////////////////////////////////////////////////////////
                     // Filter by minimum and maximum height
                     ///////////////////////////////////////////////////////////////////////
-                    if (bounds.Height < 55  || bounds.Height > 95)
+                    if (bounds.Height < 45  || bounds.Height > 115)
                     {
                         polygon.Dispose();
                         continue;
@@ -284,20 +285,18 @@ namespace Camera2016
                     ///////////////////////////////////////////////////////////////////////
                     // Filter by minimum and maximum width
                     ///////////////////////////////////////////////////////////////////////
-                    if (bounds.Width < 75 || bounds.Width > 215)
+                    if (bounds.Width < 65 || bounds.Width > 225)
                     {
                         polygon.Dispose();
                         continue;
                     }
                     ///////////////////////////////////////////////////////////////////////
 
-                    CvInvoke.PutText(image.Image, "Image size Height and Width: " + bounds.Height.ToString() + " , " + bounds.Width, TextPoint2, FontFace.HersheyPlain, 2, Green);
-
                     ///////////////////////////////////////////////////////////////////////
                     // Filter by height to width ratio
                     ///////////////////////////////////////////////////////////////////////
                     double ratio = (double)bounds.Height / bounds.Width;
-                    CvInvoke.PutText(image.Image, "Ratio: " + ratio.ToString(), TextPoint4, FontFace.HersheyPlain, 2, Green);
+                    CvInvoke.PutText(image.Image, "Ratio: " + ratio.ToString(), TextPoint3, FontFace.HersheyPlain, 2, Green);
                     if (ratio > 1.0 || ratio < .3)
                     {
                         polygon.Dispose();
@@ -310,8 +309,9 @@ namespace Camera2016
                     ///////////////////////////////////////////////////////////////////////
                     double area = CvInvoke.ContourArea(contour);
                     double areaVertRatio = area / (1280 - bounds.Location.Y);
+                    CvInvoke.PutText(image.Image, "Area/Vert Ratio (8-19): " + areaVertRatio.ToString(), TextPoint4, FontFace.HersheyPlain, 2, Green);
 
-                    if (areaVertRatio < 8.5 || areaVertRatio > 19)
+                    if (areaVertRatio < 8 || areaVertRatio > 19)
                     {
                         polygon.Dispose();
                         continue;
@@ -319,8 +319,6 @@ namespace Camera2016
                     ///////////////////////////////////////////////////////////////////////
 
                     //CvInvoke.PutText(image.Image, "Area: " + area.ToString(), TextPoint2, FontFace.HersheyPlain, 2, Green);
-                    CvInvoke.PutText(image.Image, "Area/Vert Ratio: " + areaVertRatio.ToString(), TextPoint3, FontFace.HersheyPlain, 2, Green);
-
 
                     CvInvoke.Rectangle(image.Image, bounds, Blue, 2);
 
@@ -355,7 +353,7 @@ namespace Camera2016
                 // Uncomment below to see the HSV window
                 //CvInvoke.Imshow("HSV", HsvOut);
                 // Uncomment below to see the main image window
-                //CvInvoke.Imshow("MainWindow", image.Image);
+                CvInvoke.Imshow("MainWindow", image.Image);
                 image.Dispose();
 
 
