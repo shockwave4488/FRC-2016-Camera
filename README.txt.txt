@@ -1,0 +1,1 @@
+This is the Java Camera code for the FRC 2016 Season's game, Stronghold, which ran on our 2016 competition robot, Eclipse.
